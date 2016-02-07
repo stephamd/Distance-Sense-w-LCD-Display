@@ -4,7 +4,7 @@
 # Raspberry Pi
 #
 # Author : Matt Stephan
-#
+# site: github.com/stephamd
 # Date   : 02/06/2016
 #
 
@@ -62,18 +62,5 @@ class HCSensorModule:
     return dist
     
     
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
