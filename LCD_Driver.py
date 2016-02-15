@@ -1,14 +1,12 @@
-
-
-
 #!/usr/bin/python
 #
 # HD44780 LCD Test Script for
 # Raspberry Pi
 #
-# Author : Matt Hawkins
-# Site   : http://www.raspberrypi-spy.co.uk
-#
+# Author : Matt Stephan
+# Site   : http://www.github.com/stephamd
+# Class implementation by Matt Stephan
+# Parts of code from Matt Hawkins
 # Date   : 26/07/2012
 #
 
@@ -35,123 +33,125 @@ import RPi.GPIO as GPIO
 import time
 
 # Define GPIO to LCD mapping
-LCD_RS = 25
-LCD_E  = 24
-LCD_D4 = 23
-LCD_D5 = 17
-LCD_D6 = 21
-LCD_D7 = 22
-
-# Define some device constants
-LCD_WIDTH = 16    # Maximum characters per line
-LCD_CHR = True
-LCD_CMD = False
-
-LCD_LINE_1 = 0x80 # LCD RAM address for the 1st line
-LCD_LINE_2 = 0xC0 # LCD RAM address for the 2nd line 
-# Timing constants
-E_PULSE = 0.00005
-E_DELAY = 0.00005
-
-def main():
-  # Main program block
-
-  # Initialise display
-  lcd_init()
-
-  # Send some text
-  displayLoop()
 
 
-def lcd_init():
-  GPIO.setmode(GPIO.BCM)       # Use BCM GPIO numbers
-  GPIO.setup(LCD_E, GPIO.OUT)  # E
-  GPIO.setup(LCD_RS, GPIO.OUT) # RS
-  GPIO.setup(LCD_D4, GPIO.OUT) # DB4
-  GPIO.setup(LCD_D5, GPIO.OUT) # DB5
-  GPIO.setup(LCD_D6, GPIO.OUT) # DB6
-  GPIO.setup(LCD_D7, GPIO.OUT) # DB7
-# Initialise display
-  lcd_byte(0x33,LCD_CMD)
-  lcd_byte(0x32,LCD_CMD)
-  lcd_byte(0x28,LCD_CMD)
-  lcd_byte(0x0C,LCD_CMD)
-  lcd_byte(0x06,LCD_CMD)
-  lcd_byte(0x01,LCD_CMD)
-
-def displayLoop():
-  while True:
-    lcd_byte(LCD_LINE_1, LCD_CMD)
-    lcd_string("Maxwell is a")
-    lcd_byte(LCD_LINE_2, LCD_CMD)
-    lcd_string("swell guy")
-
-    time.sleep(5)
-
-    lcd_byte(LCD_LINE_1, LCD_CMD)
-    lcd_string("i like maxwell")
-    lcd_byte(LCD_LINE_2, LCD_CMD)
-    lcd_string("")
-
-    time.sleep(5)
+class LCD_Driver:
 
 
-def lcd_string(message):
-  # Send string to display
+        def __init__(self,rs,e,d4,d5,d6,d7):
 
-  message = message.ljust(LCD_WIDTH," ")
 
-  for i in range(LCD_WIDTH):
-    lcd_byte(ord(message[i]),LCD_CHR)
+                self.LCD_RS = rs #25
+                self.LCD_E  = e #24
+                self.LCD_D4 = d4 #23
+                self.LCD_D5 = d5 #17
+                self.LCD_D6 = d6 #21
+                self.LCD_D7 = d7 #22
 
-def lcd_byte(bits, mode):
- # Send byte to data pins
-  # bits = data
-  # mode = True  for character
-  #        False for command
+                # Define some device constants
+                self.LCD_WIDTH = 16    # Maximum characters per line
+                self.LCD_CHR = True
+                self.LCD_CMD = False
 
-  GPIO.output(LCD_RS, mode) # RS
+                self.LCD_LINE_1 = 0x80 # LCD RAM address for the 1st line
+                self.LCD_LINE_2 = 0xC0 # LCD RAM address for the 2nd line 
 
-  # High bits
-  GPIO.output(LCD_D4, False)
-  GPIO.output(LCD_D5, False)
-  GPIO.output(LCD_D6, False)
-  GPIO.output(LCD_D7, False)
-  if bits&0x10==0x10:
-    GPIO.output(LCD_D4, True)
-  if bits&0x20==0x20:
-    GPIO.output(LCD_D5, True)
-  if bits&0x40==0x40:
-    GPIO.output(LCD_D6, True)
-  if bits&0x80==0x80:
-    GPIO.output(LCD_D7, True)
-    # Toggle 'Enable' pin
-  time.sleep(E_DELAY)
-  GPIO.output(LCD_E, True)
-  time.sleep(E_PULSE)
-  GPIO.output(LCD_E, False)
-  time.sleep(E_DELAY)
+                # Timing constants      
+                self.E_PULSE = 0.00005
+                self.E_DELAY = 0.00005
 
-  # Low bits
-  GPIO.output(LCD_D4, False)
-  GPIO.output(LCD_D5, False)
-  GPIO.output(LCD_D6, False)
-  GPIO.output(LCD_D7, False)
-  if bits&0x01==0x01:
-    GPIO.output(LCD_D4, True)
-  if bits&0x02==0x02:
-    GPIO.output(LCD_D5, True)
-  if bits&0x04==0x04:
-    GPIO.output(LCD_D6, True)
-  if bits&0x08==0x08:
-    GPIO.output(LCD_D7, True)
+                GPIO.setmode(GPIO.BCM)       # Use BCM GPIO numbers
 
-  # Toggle 'Enable' pin
-  time.sleep(E_DELAY)
-  GPIO.output(LCD_E, True)
-  time.sleep(E_PULSE)
-  GPIO.output(LCD_E, False)
-  time.sleep(E_DELAY)
+                GPIO.setup(self.LCD_E, GPIO.OUT)  # E
+                GPIO.setup(self.LCD_RS, GPIO.OUT) # RS
+                GPIO.setup(self.LCD_D4, GPIO.OUT) # DB4
+                GPIO.setup(self.LCD_D5, GPIO.OUT) # DB5
+                GPIO.setup(self.LCD_D6, GPIO.OUT) # DB6
+                GPIO.setup(self.LCD_D7, GPIO.OUT) # DB7
+
+                # Initialise display
+                self.lcd_byte(0x33,self.LCD_CMD)
+                self.lcd_byte(0x32,self.LCD_CMD)
+                self.lcd_byte(0x28,self.LCD_CMD)
+                self.lcd_byte(0x0C,self.LCD_CMD)
+                self.lcd_byte(0x06,self.LCD_CMD)
+                self.lcd_byte(0x01,self.LCD_CMD)
+
+
+    def updateLine(self, lineNum, textStr):
+
+                if lineNum == 1:
+                        self.lcd_byte(self.LCD_LINE_1, self.LCD_CMD)
+                        self.lcd_string(textStr)
+                        return 1
+
+                if lineNum == 2:
+                        self.lcd_byte(self.LCD_LINE_2, self.LCD_CMD)
+                        self.lcd_string(textStr)
+                        return 1
+
+                print "Invalid line number. 1 or 2"
+                return -1
+
+
+        def lcd_string(self, message):
+                # Send string to display
+
+                message = message.ljust(self.LCD_WIDTH," ")
+
+                for i in range(self.LCD_WIDTH):
+                        self.lcd_byte(ord(message[i]),self.LCD_CHR)
+
+ def lcd_byte(self, bits, mode):
+                # Send byte to data pins
+                # bits = data
+                # mode = True  for character
+                #        False for command
+
+                GPIO.output(self.LCD_RS, mode) # RS
+
+                # High bits
+                GPIO.output(self.LCD_D4, False)
+                GPIO.output(self.LCD_D5, False)
+                GPIO.output(self.LCD_D6, False)
+                GPIO.output(self.LCD_D7, False)
+                if bits&0x10==0x10:
+                        GPIO.output(self.LCD_D4, True)
+                if bits&0x20==0x20:
+                        GPIO.output(self.LCD_D5, True)
+                if bits&0x40==0x40:
+                        GPIO.output(self.LCD_D6, True)
+                if bits&0x80==0x80:
+                        GPIO.output(self.LCD_D7, True)
+
+                # Toggle 'Enable' pin
+                time.sleep(self.E_DELAY)
+                GPIO.output(self.LCD_E, True)
+                time.sleep(self.E_PULSE)
+                GPIO.output(self.LCD_E, False)
+                time.sleep(self.E_DELAY)
+
+ # Low bits
+                GPIO.output(self.LCD_D4, False)
+                GPIO.output(self.LCD_D5, False)
+                GPIO.output(self.LCD_D6, False)
+                GPIO.output(self.LCD_D7, False)
+
+                if bits&0x01==0x01:
+                        GPIO.output(self.LCD_D4, True)
+                if bits&0x02==0x02:
+                        GPIO.output(self.LCD_D5, True)
+                if bits&0x04==0x04:
+                        GPIO.output(self.LCD_D6, True)
+                if bits&0x08==0x08:
+                        GPIO.output(self.LCD_D7, True)
+
+                # Toggle 'Enable' pin
+                time.sleep(self.E_DELAY)
+                GPIO.output(self.LCD_E, True)
+                time.sleep(self.E_PULSE)
+                GPIO.output(self.LCD_E, False)
+                time.sleep(self.E_DELAY)
 
 if __name__ == '__main__':
   main()
